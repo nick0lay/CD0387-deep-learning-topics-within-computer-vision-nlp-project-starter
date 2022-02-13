@@ -111,7 +111,7 @@ To transform data and made a prediction following Sagemker methods was overridde
  - `def predict_fn(input_data, model)` to predict actual result
 
 **TODO** Remember to provide a screenshot of the deployed active endpoint in Sagemaker.
-![tunning jobs](./img/deployed_en.png)
+![dep](./img/deployed_endpoint.png)
 
 ## Standout Suggestions
 **TODO (Optional):** This is where you can provide information about any standout suggestions that you have attempted.
