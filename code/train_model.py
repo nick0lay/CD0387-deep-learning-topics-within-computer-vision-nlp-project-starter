@@ -17,8 +17,8 @@ import logging
 import os
 import sys
 import io
-# import smdebug.pytorch as smd
-# from smdebug.pytorch import get_hook
+import smdebug.pytorch as smd
+from smdebug.pytorch import get_hook
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -28,7 +28,7 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 #TODO: Import dependencies for Debugging andd Profiling
 
 def test(model, loader, criterion, device):
-#     hook = get_hook(create_if_not_exists=True)
+    hook = get_hook(create_if_not_exists=True)
     
     '''
     TODO: Complete this function that can take a model and a 
@@ -36,7 +36,7 @@ def test(model, loader, criterion, device):
           Remember to include any debugging/profiling hooks that you might need
     '''
     model.eval()
-#     hook.set_mode(smd.modes.PREDICT)
+    hook.set_mode(smd.modes.PREDICT)
 
     running_loss=0
     running_corrects=0
@@ -62,7 +62,7 @@ def test(model, loader, criterion, device):
     )
 
 def train(model, train_loader, validation_loader, criterion, optimizer, epochs, device):
-#     hook = get_hook(create_if_not_exists=True)
+    hook = get_hook(create_if_not_exists=True)
     
     '''
     TODO: Complete this function that can take a model and
@@ -77,10 +77,10 @@ def train(model, train_loader, validation_loader, criterion, optimizer, epochs, 
         for phase in ['train', 'valid']:
             print(f"Epoch {epoch}, Phase {phase}")
             if phase=='train':
-#                 hook.set_mode(smd.modes.TRAIN)
+                hook.set_mode(smd.modes.TRAIN)
                 model.train()
             else:
-#                 hook.set_mode(smd.modes.EVAL)
+                hook.set_mode(smd.modes.EVAL)
                 model.eval()
             
             running_loss = 0.0
@@ -174,7 +174,7 @@ def create_data_loaders(data, batch_size, transformer, is_shuffle = False):
 
 def model_fn(model_dir):
     logger.info(f"Creating model from {model_dir}")
-    model = net("resnet34")
+    model = net("resnet18")
     with open(os.path.join(model_dir, "model.pth"), "rb") as f:
         model.load_state_dict(torch.load(f))
     return model
@@ -187,7 +187,7 @@ def save_model(model, model_dir):
     torch.save(model.to(device).state_dict(), path)
     
 def predict_fn(input_data, model):
-    logger.info("Predict dog breed")
+    logger.info("Predicting ...")
     logger.info(type(input_data))
     logger.info(input_data)
     
@@ -199,16 +199,9 @@ def predict_fn(input_data, model):
         return model(input_data.to(device))
     
 def input_fn(request_body, request_content_type):
-    logger.info("Model input")
-    logger.info(type(request_body))
-    logger.info(request_content_type)
-    logger.info(request_body)
-    
+    logger.info("Transform input data")
     data = np.load(io.BytesIO(request_body))
     data = data.tolist()
-    logger.info("Model data")
-    logger.info(type(data))
-    logger.info(data)
     
     img_dimension = 224
     transform = transforms.Compose([
@@ -222,45 +215,13 @@ def input_fn(request_body, request_content_type):
     return input_data
     
 def output_fn(prediction, content_type):
-    logger.info("Dog breed predicted")
-    logger.info(type(prediction))
-    logger.info(prediction)
-    logger.info(content_type)
+    logger.info("Transform model outpit data")
     
     values, indexes = torch.max(prediction, 1)
     value = indexes
     print(f"Predicted value {value}")
-#     return value # works
     value = value.cpu().numpy().astype(str)
     return json.dumps(list(value)), "application/json"
-
-# def transform_fn(model, request_body, request_content_type, response_content_type):
-#     """Run prediction and return the output.
-#     The function
-#     1. Pre-processes the input request
-#     2. Runs prediction
-#     3. Post-processes the prediction output.
-#     """
-#     logger.info("Transform function")
-#     logger.info(response_content_type)
-#     logger.info(request_body)
-#     # preprocess
-#     decoded = Image.open(io.BytesIO(request_body))
-#     preprocess = transforms.Compose([
-#         transforms.Resize(img_dimension),
-#         transforms.CenterCrop(img_dimension),
-#         transforms.ToTensor(),
-#         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-#     ])
-#     normalized = preprocess(decoded)
-#     batchified = normalized.unsqueeze(0)
-    
-#     # predict
-#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-#     batchified = batchified.to(device)
-#     output = model(normalized)
-#     values, indexes = torch.max(output, 1)
-#     return int(indexes[0])
 
 def main(args):
     ImageFile.LOAD_TRUNCATED_IMAGES = True
